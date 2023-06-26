@@ -35,6 +35,6 @@ Sunmi SmartPad 接入Hante 收款
 
      
      发送消息消息:
-     HanteSDKUtils.sentMessage(TcpMessageBase msg);
+     HanteSDKUtils.sentMessageV2(TcpMessageBase msg);
 
      
