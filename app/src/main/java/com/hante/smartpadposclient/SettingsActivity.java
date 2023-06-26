@@ -135,21 +135,8 @@ public class SettingsActivity extends AppCompatActivity {
 
         //保存token 验证码
         findViewById(R.id.merchant_create_token_btn).setOnClickListener((View v)->{
-//            TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-//            posSendMessage.setVersion("V2");
-//            posSendMessage.setIp(IPUtil.getInNetIp(SettingsActivity.this));
-//            posSendMessage.setType("checkPOS");
-//            sendMsg(posSendMessage);
-//
-//            if(!TextUtils.isEmpty(token_verify_code_et.getText())){
-//                SpUtils.getInstance().save(Constant.CONFIG_TOKEN_VERIFY_CODE,token_verify_code_et.getText().toString().trim());
-//                checkToken();
-//            }else{
-//                ToastUtils.show("Please enter token verify code");
-//            }
             //查询token
             TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-            posSendMessage.setVersion("V2");
             posSendMessage.setType("searchToken");
             posSendMessage.setMerchantNo(merchantNo);
             sendMsg(posSendMessage);
@@ -182,7 +169,6 @@ public class SettingsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 if(!TextUtils.isEmpty(merchantNo)){
                     TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                    posSendMessage.setVersion("V2");
                     posSendMessage.setType("reSetPair");
                     posSendMessage.setMerchantNo(merchantNo);
                     posSendMessage.setDeviceId(deviceId);
@@ -247,7 +233,6 @@ public class SettingsActivity extends AppCompatActivity {
             public void onClick(View v) {
                 customDialog.show();
                 TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                posSendMessage.setVersion("V2");
                 posSendMessage.setType("paymentNotifyUrl");
                 posSendMessage.setDeviceId(deviceId);
                 posSendMessage.setMerchantNo(merchantNo);
@@ -344,14 +329,12 @@ public class SettingsActivity extends AppCompatActivity {
                         tv_pos_connected_sn.setText("Connected");
                         //查询token
                         TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                        posSendMessage.setVersion("V2");
                         posSendMessage.setType("searchToken");
                         posSendMessage.setMerchantNo(merchantNo);
                         sendMsg(posSendMessage);
                         new Handler().postDelayed(()->{
                             //查询签到状态
                             TcpTransactionMessage signInStatus = new TcpTransactionMessage();
-                            signInStatus.setVersion("V2");
                             signInStatus.setType("searchCreditCardSignInStatus");
                             signInStatus.setMerchantNo(merchantNo);
                             sendMsg(signInStatus);
@@ -461,7 +444,6 @@ public class SettingsActivity extends AppCompatActivity {
                                             @Override
                                             public void callSuccess(String code) {
                                                 TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                                posSendMessage.setVersion("V2");
                                                 posSendMessage.setType("devicePair");
                                                 posSendMessage.verifyCode=code;
                                                 posSendMessage.setMerchantNo(merchantNo);
@@ -483,7 +465,6 @@ public class SettingsActivity extends AppCompatActivity {
                                         @Override
                                         public void callSuccess(String code) {
                                             TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                            posSendMessage.setVersion("V2");
                                             posSendMessage.setType("devicePair");
                                             posSendMessage.verifyCode=code;
                                             posSendMessage.setMerchantNo(merchantNo);

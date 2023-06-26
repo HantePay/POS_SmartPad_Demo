@@ -1406,9 +1406,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void jumpCheck(){
-        Intent intent= new Intent(MainActivity.this, SettingsActivity.class);
-        intent.putExtra("version","V2");
-        startActivityForResult(intent,101);
+        startActivityForResult(new Intent(MainActivity.this, SettingsActivity.class),101);
     }
 
     /**
