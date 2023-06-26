@@ -578,7 +578,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     private void sendMsg(TcpMessageBase msg) {
         if(HanteSDKUtils.isConnected()){
-            HanteSDKUtils.sentMessage(msg);
+            HanteSDKUtils.sentMessageV2(msg);
         }else {
             Toast.makeText(this,"Please Check Device SN",Toast.LENGTH_SHORT).show();
         }

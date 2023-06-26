@@ -417,8 +417,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onClick(View view) {
         TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-        posSendMessage.setVersion("V2");
-//        posSendMessage.setIp(IPUtil.getInNetIp(MainActivity.this));
         switch (view.getId()) {
             case R.id.connect_btn://连接socket
                 if (!HanteSDKUtils.isConnected()) {
@@ -432,7 +430,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     runOnUiThread(()->{
                                         //查询token
                                         TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                        posSendMessage.setVersion("V2");
                                         posSendMessage.setType("searchToken");
                                         posSendMessage.setMerchantNo(merchant_et.getText().toString());
                                         sendMsg(posSendMessage);
@@ -555,7 +552,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                                 @Override
                                                                 public void callSuccess(String code) {
                                                                     TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                                                    posSendMessage.setVersion("V2");
                                                                     posSendMessage.setType("devicePair");
                                                                     posSendMessage.verifyCode=code;
                                                                     posSendMessage.setMerchantNo(merchant_et.getText().toString());
@@ -652,7 +648,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                                     @Override
                                                                     public void callSuccess(String code) {
                                                                         TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                                                        posSendMessage.setVersion("V2");
                                                                         posSendMessage.setType("devicePair");
                                                                         posSendMessage.verifyCode=code;
                                                                         posSendMessage.setMerchantNo(merchant_et.getText().toString());
@@ -924,7 +919,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.upload_order_btn://上报订单
                 TcpUploadOrderMessage tcpUploadOrderMessage=new TcpUploadOrderMessage();
-                tcpUploadOrderMessage.setVersion("V2");
                 tcpUploadOrderMessage.setType("uploadorder");
                 tcpUploadOrderMessage.setMsgId(randomOrderNo());
                 tcpUploadOrderMessage.setMerchantNo(merchant_et.getText().toString());
@@ -964,7 +958,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.refresh_order_btn:
                 TcpUpdatedorderMessage tcpUpdatedorderMessage=new TcpUpdatedorderMessage();
-                tcpUpdatedorderMessage.setVersion("V2");
                 tcpUpdatedorderMessage.setType("updatedorder");
                 tcpUpdatedorderMessage.setMerchantNo(merchant_et.getText().toString());
                 tcpUpdatedorderMessage.setDeviceId(device_id_et.getText().toString());
@@ -1006,7 +999,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.refund_btn://退款
                 TcpRefundMessage tcpRefundMessage=new TcpRefundMessage();
                 tcpRefundMessage.setType("refund");
-                tcpRefundMessage.setVersion("V2");
                 tcpRefundMessage.setMerchantNo(merchant_et.getText().toString());
                 tcpRefundMessage.setDeviceId(device_id_et.getText().toString());
                 if(TextUtils.isEmpty(refund_et.getText().toString())){
@@ -1026,7 +1018,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.capture_btn://capture
                 TcpCaptureMessage tcpCaptureMessage=new TcpCaptureMessage();
                 tcpCaptureMessage.setType("capture");
-                tcpCaptureMessage.setVersion("V2");
                 tcpCaptureMessage.setMerchantNo(merchant_et.getText().toString());
                 tcpCaptureMessage.setDeviceId(device_id_et.getText().toString());
                 if(!TextUtils.isEmpty(capture_et.getText().toString())){
@@ -1047,7 +1038,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.void_btn:
                 TcpVoidMessage tcpVoidMessage=new TcpVoidMessage();
                 tcpVoidMessage.setType("void");
-                tcpVoidMessage.setVersion("V2");
                 tcpVoidMessage.setMerchantNo(merchant_et.getText().toString());
                 tcpVoidMessage.setDeviceId(device_id_et.getText().toString());
 
@@ -1063,7 +1053,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.query_order_btn:
                 TcpOrderqueryMessage orderqueryMessage=new TcpOrderqueryMessage();
-                orderqueryMessage.setVersion("V2");
                 orderqueryMessage.setType("orderQuery");
                 orderqueryMessage.setMerchantNo(merchant_et.getText().toString());
                 orderqueryMessage.setDeviceId(device_id_et.getText().toString());
@@ -1252,7 +1241,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onClick(View v) {
                         TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                        posSendMessage.setVersion("V2");
                         posSendMessage.setType("transactionCancel");
                         posSendMessage.setOrderNo(reconnection_order_et.getText().toString());
                         posSendMessage.setMerchantNo(merchant_et.getText().toString());
@@ -1294,7 +1282,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             param_tv.setText(msg.toString());
             result_tv.setText("Response:");
-            HanteSDKUtils.sentMessage(msg);
+            HanteSDKUtils.sentMessageV2(msg);
         }else {
             Toast.makeText(this,"Please connect to POS first",Toast.LENGTH_SHORT).show();
         }
