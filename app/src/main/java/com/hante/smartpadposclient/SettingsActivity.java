@@ -1,7 +1,5 @@
 package com.hante.smartpadposclient;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
@@ -10,6 +8,8 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
@@ -22,10 +22,10 @@ import com.hante.smartpadposclient.net.RetrofitFactory;
 import com.hante.smartpadposclient.net.SimpleObserver;
 import com.hante.smartpadposclient.utils.Constant;
 import com.hante.smartpadposclient.utils.SpUtils;
-import com.hante.tcp.bean.v2.TcpMessageBase;
-import com.hante.tcp.bean.v2.TcpTransactionMessage;
+import com.hante.tcp.bean.v2.POSBase;
+import com.hante.tcp.bean.v2.POSTransaction;
 import com.hante.tcp.callback.SocketCallback;
-import com.hante.tcp.util.HanteSDKUtils;
+import com.hante.tcp.util.HantePOSAPI;
 import com.hjq.toast.ToastUtils;
 import com.wuhenzhizao.titlebar.widget.CommonTitleBar;
 
@@ -95,7 +95,7 @@ public class SettingsActivity extends AppCompatActivity {
         payment_notify_url_et=findViewById(R.id.payment_notify_url_et);
 
         customDialog=new CustomDialog(this);
-        HanteSDKUtils.stopTcpConnect();
+        HantePOSAPI.stopPOSConnect();
         version=getIntent().getStringExtra("version");
         if(TextUtils.isEmpty(version)){
             version="V1";
@@ -136,7 +136,8 @@ public class SettingsActivity extends AppCompatActivity {
         //保存token 验证码
         findViewById(R.id.merchant_create_token_btn).setOnClickListener((View v)->{
             //查询token
-            TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+            POSTransaction posSendMessage = new POSTransaction();
+            posSendMessage.setVersion("V2");
             posSendMessage.setType("searchToken");
             posSendMessage.setMerchantNo(merchantNo);
             sendMsg(posSendMessage);
@@ -168,7 +169,8 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(!TextUtils.isEmpty(merchantNo)){
-                    TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+                    POSTransaction posSendMessage = new POSTransaction();
+                    posSendMessage.setVersion("V2");
                     posSendMessage.setType("reSetPair");
                     posSendMessage.setMerchantNo(merchantNo);
                     posSendMessage.setDeviceId(deviceId);
@@ -232,7 +234,8 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 customDialog.show();
-                TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+                POSTransaction posSendMessage = new POSTransaction();
+                posSendMessage.setVersion("V2");
                 posSendMessage.setType("paymentNotifyUrl");
                 posSendMessage.setDeviceId(deviceId);
                 posSendMessage.setMerchantNo(merchantNo);
@@ -320,7 +323,7 @@ public class SettingsActivity extends AppCompatActivity {
         }
 
         if(!TextUtils.isEmpty(ip)){
-            HanteSDKUtils.connectTcpService(SettingsActivity.this, ip, "", "", new SocketCallback() {
+            HantePOSAPI.connectPOSService(SettingsActivity.this, ip, "", "", new SocketCallback() {
                 @Override
                 public void connected() {
                     runOnUiThread(()->{
@@ -328,13 +331,15 @@ public class SettingsActivity extends AppCompatActivity {
                         refreshTransBtn(true);
                         tv_pos_connected_sn.setText("Connected");
                         //查询token
-                        TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+                        POSTransaction posSendMessage = new POSTransaction();
+                        posSendMessage.setVersion("V2");
                         posSendMessage.setType("searchToken");
                         posSendMessage.setMerchantNo(merchantNo);
                         sendMsg(posSendMessage);
                         new Handler().postDelayed(()->{
                             //查询签到状态
-                            TcpTransactionMessage signInStatus = new TcpTransactionMessage();
+                            POSTransaction signInStatus = new POSTransaction();
+                            signInStatus.setVersion("V2");
                             signInStatus.setType("searchCreditCardSignInStatus");
                             signInStatus.setMerchantNo(merchantNo);
                             sendMsg(signInStatus);
@@ -390,7 +395,7 @@ public class SettingsActivity extends AppCompatActivity {
                                 if(!TextUtils.isEmpty(deviceId) && !TextUtils.isEmpty(key)){
                                     SpUtils.getInstance().save(Constant.DATE_DEVICE_TOKEN,JSONObject.toJSONString(token));
                                     //关闭连接，重新连接
-                                    HanteSDKUtils.refreshToken(deviceId,key);
+                                    HantePOSAPI.refreshToken(deviceId,key);
                                     runOnUiThread(()->{
                                         StringBuilder sb=new StringBuilder();
                                         sb.append("deviceId:").append(deviceId).append("  token:").append(key);
@@ -424,7 +429,7 @@ public class SettingsActivity extends AppCompatActivity {
                                         String tok=token.getString("token");
                                         if(!TextUtils.isEmpty(deviceId)){
                                             //刷新 device ID
-                                            HanteSDKUtils.refreshToken(deviceId,tok);
+                                            HantePOSAPI.refreshToken(deviceId,tok);
                                             runOnUiThread(()->{
                                                 //String deviceSN=jsonObject.getString("deviceSN");
                                                 tv_pos_token_pair_code_tv.setVisibility(View.VISIBLE);
@@ -443,7 +448,8 @@ public class SettingsActivity extends AppCompatActivity {
                                         new PairingCodeDialog(SettingsActivity.this).builder().setPositiveButton(new BaseCallBack<String>() {
                                             @Override
                                             public void callSuccess(String code) {
-                                                TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+                                                POSTransaction posSendMessage = new POSTransaction();
+                                                posSendMessage.setVersion("V2");
                                                 posSendMessage.setType("devicePair");
                                                 posSendMessage.verifyCode=code;
                                                 posSendMessage.setMerchantNo(merchantNo);
@@ -464,7 +470,8 @@ public class SettingsActivity extends AppCompatActivity {
                                     new PairingCodeDialog(SettingsActivity.this).builder().setPositiveButton(new BaseCallBack<String>() {
                                         @Override
                                         public void callSuccess(String code) {
-                                            TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+                                            POSTransaction posSendMessage = new POSTransaction();
+                                            posSendMessage.setVersion("V2");
                                             posSendMessage.setType("devicePair");
                                             posSendMessage.verifyCode=code;
                                             posSendMessage.setMerchantNo(merchantNo);
@@ -532,7 +539,7 @@ public class SettingsActivity extends AppCompatActivity {
     private void checkToken(){
         String code= SpUtils.getInstance().getString(Constant.CONFIG_TOKEN_VERIFY_CODE,"");
         if(!TextUtils.isEmpty(code)){
-            TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+            POSTransaction posSendMessage = new POSTransaction();
             posSendMessage.setVersion(version);
             posSendMessage.setType("devicePair");
             posSendMessage.verifyCode=token_verify_code_et.getText().toString();
@@ -546,7 +553,7 @@ public class SettingsActivity extends AppCompatActivity {
         String pass= SpUtils.getInstance().getString(Constant.CONFIG_CREDIT_CARD_SIGN_IN_PASSWORD,"");
         if(!TextUtils.isEmpty(pass)){
             customDialog.show();
-            TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+            POSTransaction posSendMessage = new POSTransaction();
             posSendMessage.setVersion(version);
             posSendMessage.setType("creditCardSignIn");
             posSendMessage.setMerchantNo(merchantNo);
@@ -557,9 +564,9 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
 
-    private void sendMsg(TcpMessageBase msg) {
-        if(HanteSDKUtils.isConnected()){
-            HanteSDKUtils.sentMessageV2(msg);
+    private void sendMsg(POSBase msg) {
+        if(HantePOSAPI.isConnected()){
+            HantePOSAPI.sentMessageV2(msg);
         }else {
             Toast.makeText(this,"Please Check Device SN",Toast.LENGTH_SHORT).show();
         }
@@ -580,7 +587,7 @@ public class SettingsActivity extends AppCompatActivity {
 
     @Override
     public void finish() {
-        HanteSDKUtils.stopTcpConnect();
+        HantePOSAPI.stopPOSConnect();
         super.finish();
     }
 

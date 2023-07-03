@@ -1,8 +1,5 @@
 package com.hante.smartpadposclient;
 
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
@@ -16,6 +13,9 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONArray;
@@ -33,26 +33,13 @@ import com.hante.smartpadposclient.net.RetrofitFactory;
 import com.hante.smartpadposclient.net.SimpleObserver;
 import com.hante.smartpadposclient.utils.Constant;
 import com.hante.smartpadposclient.utils.SpUtils;
-import com.hante.tcp.bean.v2.TcpAdditionalCharges;
-import com.hante.tcp.bean.v2.TcpCaptureMessage;
-import com.hante.tcp.bean.v2.TcpGoodsItem;
-import com.hante.tcp.bean.v2.TcpMachinOrderListMessage;
-import com.hante.tcp.bean.v2.TcpMessageBase;
-import com.hante.tcp.bean.v2.TcpOrderItem;
-import com.hante.tcp.bean.v2.TcpOrderqueryMessage;
-import com.hante.tcp.bean.v2.TcpRefundMessage;
-import com.hante.tcp.bean.v2.TcpTransactionMessage;
-import com.hante.tcp.bean.v2.TcpUpdatedorderMessage;
-import com.hante.tcp.bean.v2.TcpUploadOrderMessage;
-import com.hante.tcp.bean.v2.TcpVoidMessage;
+import com.hante.tcp.bean.v2.POSTransaction;
 import com.hante.tcp.callback.SocketCallback;
-import com.hante.tcp.util.HanteSDKUtils;
+import com.hante.tcp.util.HantePOSAPI;
 import com.hjq.toast.ToastUtils;
 import com.wuhenzhizao.titlebar.widget.CommonTitleBar;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
 
 import io.reactivex.annotations.NonNull;
@@ -307,7 +294,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //        findViewById(R.id.jump_to_old).setOnClickListener(this);
 
-        findViewById(R.id.upload_order_btn).setOnClickListener(this);
 
         findViewById(R.id.refresh_order_btn).setOnClickListener(this);
 
@@ -409,6 +395,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             public void afterTextChanged(Editable s) {
                 findViewById(R.id.query_order_btn).setEnabled(s.length()>0);
                 findViewById(R.id.refund_btn).setEnabled(s.length()>0);
+                findViewById(R.id.void_btn).setEnabled(s.length()>0);
+                findViewById(R.id.capture_btn).setEnabled(s.length()>0);
             }
         });
 
@@ -416,24 +404,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onClick(View view) {
-        TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
+        int taxAmount=0;
+        int tipAmount=0;
         switch (view.getId()) {
             case R.id.connect_btn://连接socket
-                if (!HanteSDKUtils.isConnected()) {
+                if (!HantePOSAPI.isConnected()) {
                     customDialog.show();
                     customDialog.setProgressText("Connect POS");
-                    HanteSDKUtils.connectTcpService(MainActivity.this, ip_et.getText().toString(), device_id_et.getText().toString(),
+                    HantePOSAPI.connectPOSService(MainActivity.this, ip_et.getText().toString(), device_id_et.getText().toString(),
                             device_key_et.getText().toString(), new SocketCallback() {
                                 @Override
                                 public void connected() {
                                     setStatus("Successful connection");
                                     runOnUiThread(()->{
                                         //查询token
-                                        TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                        posSendMessage.setType("searchToken");
-                                        posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                                        sendMsg(posSendMessage);
-
+                                        HantePOSAPI.searchToken(merchant_et.getText().toString());
                                         refreshTransBtn(true);
                                     });
                                 }
@@ -484,46 +469,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         public void run() {
                                             result_tv.setText(msg);
                                             try {
-                                                TcpMachinOrderListMessage orderBean = JSON.parseObject(msg, TcpMachinOrderListMessage.class);
+                                                POSTransaction orderBean = JSON.parseObject(msg, POSTransaction.class);
                                                 //响应订单
-                                                if("selectorder".equals(orderBean.getType())){
-                                                    List<TcpOrderItem> tableBeans = new ArrayList<>();
-                                                    int num= (int) (Math.random()*10);
-                                                    for(int i=0;i<num;i++){
-                                                        TcpOrderItem tcpOrderItem=new TcpOrderItem();
-                                                        tcpOrderItem.setTitle("大厅"+(i+1)+"桌");
-                                                        tcpOrderItem.setDesc("聚餐");
-                                                        tcpOrderItem.setNote("key=1412");
-                                                        tcpOrderItem.setOrderNo(randomOrderNo());
-                                                        tcpOrderItem.setAmount(1);
-                                                        TcpAdditionalCharges charges=new TcpAdditionalCharges();
-                                                        charges.setTipAmount(i);
-                                                        charges.setTipCustom(true);
-                                                        charges.setTaxAmount(1);
-                                                        tcpOrderItem.setAdditionalCharges(charges.toString());
-                                                        List<TcpGoodsItem> goodsItems=new ArrayList<>();
-                                                        TcpGoodsItem goodsItem=new TcpGoodsItem();
-                                                        goodsItem.setName("米饭");
-                                                        goodsItem.setQuantity(1);
-                                                        goodsItem.setUnitPrice(1);
-                                                        goodsItems.add(goodsItem);
-                                                        TcpGoodsItem goodsItem2=new TcpGoodsItem();
-                                                        goodsItem2.setName("红烧肉");
-                                                        goodsItem2.setQuantity(1);
-                                                        goodsItem2.setUnitPrice(1);
-                                                        goodsItems.add(goodsItem2);
-                                                        tcpOrderItem.setItems(JSON.toJSONString(goodsItems));
-
-                                                        tableBeans.add(tcpOrderItem);
-                                                    }
-                                                    orderBean.setDeviceSN(null);
-                                                    orderBean.setOrderList(tableBeans.toString());
-                                                    orderBean.setDeviceId(device_id_et.getText().toString());
-                                                    orderBean.setMerchantNo(merchant_et.getText().toString());
-                                                    orderBean.setType("selectorder");
-                                                    orderBean.setOrderList(JSON.toJSONString(tableBeans));
-                                                    sendMsg(orderBean);
-                                                }else if("searchToken".equals(orderBean.getType())){
+                                                if("searchToken".equals(orderBean.getType())){
                                                     JSONObject jsonObject=JSONObject.parseObject(msg);
                                                     String resultCode=jsonObject.getString("resultCode");
                                                     String resultMsg=jsonObject.getString("resultMsg");
@@ -542,7 +490,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                                         device_id_et.setText(deviceId);
                                                                         device_key_et.setText(tok);
                                                                         //刷新 device ID
-                                                                        HanteSDKUtils.refreshToken(deviceId,tok);
+                                                                        HantePOSAPI.refreshToken(deviceId,tok);
                                                                     }
                                                                 }
 
@@ -551,11 +499,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                             new PairingCodeDialog(MainActivity.this).builder().setPositiveButton(new BaseCallBack<String>() {
                                                                 @Override
                                                                 public void callSuccess(String code) {
-                                                                    TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                                                    posSendMessage.setType("devicePair");
-                                                                    posSendMessage.verifyCode=code;
-                                                                    posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                                                                    sendMsg(posSendMessage);
+                                                                    HantePOSAPI.pairingDevice(code,merchant_et.getText().toString());
                                                                 }
 
                                                                 @Override
@@ -594,7 +538,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                                         device_id_et.setText(deviceId);
                                                                         device_key_et.setText(key);
                                                                         //关闭连接，重新连接
-                                                                        HanteSDKUtils.refreshToken(deviceId,key);
+                                                                        HantePOSAPI.refreshToken(deviceId,key);
                                                                     }
                                                                 }
 
@@ -617,6 +561,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                             if(!TextUtils.isEmpty(orderNo)){
                                                                 String ip=ip_et.getText().toString();
                                                                 String imgUrl="http://"+ip+":5000/pos?action=orderSignature&orderNo="+orderNo;
+//                                                        Bitmap bitmap=ImageUtils.base64ToBitmap(base64Img);
+//                                                        if(null!=bitmap){
+//                                                            oder_sign_img.setImageBitmap(bitmap);
+//                                                        }
                                                                 Glide.with(MainActivity.this).load(imgUrl).into(oder_sign_img);
                                                             }
                                                         }
@@ -647,11 +595,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                                                 new PairingCodeDialog(MainActivity.this).builder().setPositiveButton(new BaseCallBack<String>() {
                                                                     @Override
                                                                     public void callSuccess(String code) {
-                                                                        TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                                                                        posSendMessage.setType("devicePair");
-                                                                        posSendMessage.verifyCode=code;
-                                                                        posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                                                                        sendMsg(posSendMessage);
+                                                                        HantePOSAPI.pairingDevice(code,merchant_et.getText().toString());
                                                                     }
 
                                                                     @Override
@@ -768,7 +712,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 break;
             case R.id.stop_connect_btn:
-                HanteSDKUtils.stopTcpConnect();
+                HantePOSAPI.stopPOSConnect();
                 break;
             case R.id.reconnection_time_btn:
                 if(TextUtils.isEmpty(reconnection_time_et.getText().toString())){
@@ -776,329 +720,154 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     return;
                 }
                 int time=Integer.parseInt(reconnection_time_et.getText().toString());
-                HanteSDKUtils.setReconnectionTime(time);
+                HantePOSAPI.setReconnectionTime(time);
                 break;
             case R.id.checkstand_btn://信用卡
             case R.id.auth_btn:
-                posSendMessage.setType("transaction");
                 if(TextUtils.isEmpty(et_amount.getText().toString())){
                     ToastUtils.show("Please enter the transaction amount");
                     return;
                 }
-                posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setPaymentScenario("POS_PAYMENT");
-                posSendMessage.setTransType(R.id.checkstand_btn==view.getId()?"SALE":"AUTH");
-                //"{\"taxAmount\":1,\"tipCustom\":false,\"tipAmount\":0}"
-                JSONObject charges0=new JSONObject();
-                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges0.put("taxAmount",et_tax_amount.getText().toString());
 
+                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
+
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges0.put("tipCustom",true);
-                    charges0.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges0.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-                posSendMessage.setAdditionalCharges(charges0.toJSONString());
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setItems("[{\"itemId\":1001,\"name\":\"衣服\",\"description\":\"x125\",\"quantity\":1,\"unitPrice\":1},{\"itemId\":1001,\"name\":\"裤子\",\"description\":\"x125\",\"quantity\":2,\"unitPrice\":1}]");
-                posSendMessage.setNote("pay=1215284515");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+                refreshPromptDialog("transaction");
+                HantePOSAPI.sale(R.id.checkstand_btn==view.getId()?"SALE":"AUTH"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"POS_PAYMENT",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.qrcode_collection_btn://二维码收款
-                posSendMessage.setType("transaction");
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
+                if(TextUtils.isEmpty(et_amount.getText().toString())){
+                    ToastUtils.show("Please enter the transaction amount");
+                    return;
                 }
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                //"{\"taxAmount\":1,\"tipCustom\":false,\"tipAmount\":0}"
-                JSONObject charges=new JSONObject();
+
                 if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges.put("taxAmount",et_tax_amount.getText().toString());
-
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges.put("tipCustom",true);
-                    charges.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-
-                posSendMessage.setItems("[{\"itemId\":1001,\"name\":\"衣服\",\"description\":\"x125\",\"quantity\":2,\"unitPrice\":1},{\"itemId\":1001,\"name\":\"裤子\",\"description\":\"x125\",\"quantity\":2,\"unitPrice\":1}]");
-                posSendMessage.setAdditionalCharges(charges.toJSONString());
-                posSendMessage.setPaymentScenario("QR_CODE_PAYMENT");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+                refreshPromptDialog("transaction");
+                HantePOSAPI.sale("SALE"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"QR_CODE_PAYMENT",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
 
                 break;
             case R.id.qrcode_scan_btn://扫码收款
 
-                posSendMessage.setType("transaction");
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
+                if(TextUtils.isEmpty(et_amount.getText().toString())){
+                    ToastUtils.show("Please enter the transaction amount");
+                    return;
                 }
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setPaymentScenario("SCAN_CODE_PAYMENT");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
 
-                //"{\"taxAmount\":1,\"tipCustom\":false,\"tipAmount\":0}"
-                JSONObject charge=new JSONObject();
                 if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charge.put("taxAmount",et_tax_amount.getText().toString());
-
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charge.put("tipCustom",true);
-                    charge.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charge.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-                posSendMessage.setAdditionalCharges(charge.toJSONString());
-                sendMsg(posSendMessage);
+                refreshPromptDialog("transaction");
+                HantePOSAPI.sale("SALE"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"SCAN_CODE_PAYMENT",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
+
 
                 break;
             case R.id.checkout_counter_btn://收银台
-                posSendMessage.setType("transaction");
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
+                if(TextUtils.isEmpty(et_amount.getText().toString())){
+                    ToastUtils.show("Please enter the transaction amount");
+                    return;
                 }
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                JSONObject charges2=new JSONObject();
-                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges2.put("taxAmount",et_tax_amount.getText().toString());
 
+                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges2.put("tipCustom",true);
-                    charges2.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges2.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-                posSendMessage.setAdditionalCharges(charges2.toJSONString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setPaymentScenario("HANTE_CASHIER");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+                refreshPromptDialog("transaction");
+                HantePOSAPI.sale("SALE"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"HANTE_CASHIER",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.checkout_cancel_btn://取消
-                posSendMessage.setType("transactionCancel");
-                posSendMessage.setOrderNo(reconnection_order_et.getText().toString());
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
-                break;
-            case R.id.upload_order_btn://上报订单
-                TcpUploadOrderMessage tcpUploadOrderMessage=new TcpUploadOrderMessage();
-                tcpUploadOrderMessage.setType("uploadorder");
-                tcpUploadOrderMessage.setMsgId(randomOrderNo());
-                tcpUploadOrderMessage.setMerchantNo(merchant_et.getText().toString());
-                tcpUploadOrderMessage.setDeviceId(device_id_et.getText().toString());
-                JSONArray jsonArray=new JSONArray();
-                JSONObject jsonObject=new JSONObject();
-                //[{"amount":2,"currency":"USD","title":"购物","body":"衣服","note":"Aa=bb","additionalCharges":,"items":,"rule":"满100优惠5"}]
-                jsonObject.put("orderNo",reconnection_order_et.getText().toString());
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    jsonObject.put("amount",Integer.parseInt(et_amount.getText().toString()));
-                }
-
-                jsonObject.put("title","购物");
-                jsonObject.put("node","Aa=bb");
-                jsonObject.put("desc",et_remark.getText().toString());
-
-                JSONObject charges3=new JSONObject();
-                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges3.put("taxAmount",et_tax_amount.getText().toString());
-
-                }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
-                if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges3.put("tipCustom",true);
-                    charges3.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges3.put("tipCustom",false);
-                }
-                jsonObject.put("additionalCharges",charges3.toJSONString());
-                jsonObject.put("items","[{\"itemId\":1001,\"name\":\"衣服\",\"description\":\"x125\",\"quantity\":2,\"unitPrice\":1},{\"itemId\":1001,\"name\":\"裤子\",\"description\":\"x125\",\"quantity\":1,\"unitPrice\":1}]");
-                jsonObject.put("rule","满100优惠5");
-                jsonArray.add(jsonObject);
-                tcpUploadOrderMessage.setOrderList(jsonArray.toString());
-                sendMsg(tcpUploadOrderMessage);
+                HantePOSAPI.cancelTransaction(reconnection_order_et.getText().toString(),device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.refresh_order_btn:
-                TcpUpdatedorderMessage tcpUpdatedorderMessage=new TcpUpdatedorderMessage();
-                tcpUpdatedorderMessage.setType("updatedorder");
-                tcpUpdatedorderMessage.setMerchantNo(merchant_et.getText().toString());
-                tcpUpdatedorderMessage.setDeviceId(device_id_et.getText().toString());
-                tcpUpdatedorderMessage.setOrderNo(reconnection_order_et.getText().toString());
-                tcpUpdatedorderMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
-                tcpUpdatedorderMessage.setCurrency("USD");
-                tcpUpdatedorderMessage.setTitle("购物dffff");
-                tcpUpdatedorderMessage.setDesc(et_remark.getText().toString());
-                tcpUpdatedorderMessage.setNote("aa=1212187");
 
-                JSONObject charges4=new JSONObject();
-                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges4.put("taxAmount",et_tax_amount.getText().toString());
-
-                }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
-                if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges4.put("tipCustom",true);
-                    charges4.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges4.put("tipCustom",false);
-                }
-                tcpUpdatedorderMessage.setAdditionalCharges(charges4.toJSONString());
-
-//                tcpUpdatedorderMessage.setAdditionalCharges("{\"taxAmount\":2,\"tipCustom\":true,\"tipAmount\":2}");
-                tcpUpdatedorderMessage.setItems("[{\"itemId\":10022,\"name\":\"打狗棒\",\"description\":\"SX\",\"quantity\":2,\"unitPrice\":200}]");
-                sendMsg(tcpUpdatedorderMessage);
                 break;
             case R.id.cancel_order_btn://cancelorder
-                posSendMessage.setType("cancelorder");
-                posSendMessage.setOrderNo(reconnection_order_et.getText().toString());
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+
                 break;
 
             case R.id.refund_btn://退款
-                TcpRefundMessage tcpRefundMessage=new TcpRefundMessage();
-                tcpRefundMessage.setType("refund");
-                tcpRefundMessage.setMerchantNo(merchant_et.getText().toString());
-                tcpRefundMessage.setDeviceId(device_id_et.getText().toString());
                 if(TextUtils.isEmpty(refund_et.getText().toString())){
                     ToastUtils.show("Please enter the refund amount");
                     return;
                 }
-                tcpRefundMessage.setAmount(Integer.parseInt(refund_et.getText().toString()));
 
-                if(!TextUtils.isEmpty(order_tr_et.getText().toString())){
-                    tcpRefundMessage.setTransactionId(order_tr_et.getText().toString());
+                if(TextUtils.isEmpty(order_tr_et.getText().toString())){
+                    ToastUtils.show("Please enter the transactionId");
+                    return;
                 }
-//                if(!TextUtils.isEmpty(reconnection_order_et.getText().toString())){
-//                    tcpRefundMessage.setOrderNo(reconnection_order_et.getText().toString());
-//                }
-                sendMsg(tcpRefundMessage);
+
+                refreshPromptDialog("refund");
+                HantePOSAPI.refund(Integer.parseInt(refund_et.getText().toString()),order_tr_et.getText().toString()
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.capture_btn://capture
-                TcpCaptureMessage tcpCaptureMessage=new TcpCaptureMessage();
-                tcpCaptureMessage.setType("capture");
-                tcpCaptureMessage.setMerchantNo(merchant_et.getText().toString());
-                tcpCaptureMessage.setDeviceId(device_id_et.getText().toString());
-                if(!TextUtils.isEmpty(capture_et.getText().toString())){
-                    tcpCaptureMessage.setAmount(Integer.parseInt(capture_et.getText().toString()));
+                if(TextUtils.isEmpty(order_tr_et.getText().toString())){
+                    ToastUtils.show("Please enter the transactionId");
+                    return;
                 }
-                if(!TextUtils.isEmpty(capture_tip_et.getText().toString())){
-                    tcpCaptureMessage.setTipAmount(Integer.parseInt(capture_tip_et.getText().toString()));
+
+                if(TextUtils.isEmpty(capture_et.getText().toString())){
+                    ToastUtils.show("Please enter the amount");
+                    return;
                 }
-                if(!TextUtils.isEmpty(order_tr_et.getText().toString())){
-                    tcpCaptureMessage.setTransactionId(order_tr_et.getText().toString());
-                }
-                if(!TextUtils.isEmpty(reconnection_order_et.getText().toString())){
-                    tcpCaptureMessage.setOrderNo(reconnection_order_et.getText().toString());
-                }
-                sendMsg(tcpCaptureMessage);
+                refreshPromptDialog("capture");
+
+                HantePOSAPI.capture(order_tr_et.getText().toString(),Integer.parseInt(capture_et.getText().toString()),Integer.parseInt(capture_tip_et.getText().toString()),
+                        device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
 
             case R.id.void_btn:
-                TcpVoidMessage tcpVoidMessage=new TcpVoidMessage();
-                tcpVoidMessage.setType("void");
-                tcpVoidMessage.setMerchantNo(merchant_et.getText().toString());
-                tcpVoidMessage.setDeviceId(device_id_et.getText().toString());
-
-                if(!TextUtils.isEmpty(order_tr_et.getText().toString())){
-                    tcpVoidMessage.setTransactionId(order_tr_et.getText().toString());
+                if(TextUtils.isEmpty(order_tr_et.getText().toString())){
+                    ToastUtils.show("Please enter the transactionId");
+                    return;
                 }
-
-                if(!TextUtils.isEmpty(reconnection_order_et.getText().toString())){
-                    tcpVoidMessage.setOrderNo(reconnection_order_et.getText().toString());
-                }
-                sendMsg(tcpVoidMessage);
-
+                refreshPromptDialog("void");
+                HantePOSAPI.Void(order_tr_et.getText().toString(),device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.query_order_btn:
-                TcpOrderqueryMessage orderqueryMessage=new TcpOrderqueryMessage();
-                orderqueryMessage.setType("orderQuery");
-                orderqueryMessage.setMerchantNo(merchant_et.getText().toString());
-                orderqueryMessage.setDeviceId(device_id_et.getText().toString());
-//                if(!TextUtils.isEmpty(reconnection_order_et.getText().toString())){
-//                    orderqueryMessage.setOrderNo(reconnection_order_et.getText().toString());
-//                }
-
-                if(!TextUtils.isEmpty(order_tr_et.getText().toString())){
-                    orderqueryMessage.setTransactionId(order_tr_et.getText().toString());
+                if(TextUtils.isEmpty(order_tr_et.getText().toString())){
+                    ToastUtils.show("Please enter the transactionId");
+                    return;
                 }
-
-                sendMsg(orderqueryMessage);
+                HantePOSAPI.orderQuery(order_tr_et.getText().toString(),device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.checkout_ebt_btn:
-                posSendMessage.setType("transaction");
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
+                if(TextUtils.isEmpty(et_amount.getText().toString())){
+                    ToastUtils.show("Please enter the transaction amount");
+                    return;
                 }
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setPaymentScenario("POS_PAYMENT");
-                posSendMessage.setTransType("EBT");
-                //"{\"taxAmount\":1,\"tipCustom\":false,\"tipAmount\":0}"
-                JSONObject charges00=new JSONObject();
-                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges00.put("taxAmount",et_tax_amount.getText().toString());
 
+                if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges00.put("tipCustom",true);
-                    charges00.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges00.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-                posSendMessage.setAdditionalCharges(charges00.toJSONString());
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setItems("[{\"itemId\":1001,\"name\":\"衣服\",\"description\":\"x125\",\"quantity\":1,\"unitPrice\":1},{\"itemId\":1001,\"name\":\"裤子\",\"description\":\"x125\",\"quantity\":2,\"unitPrice\":1}]");
-                posSendMessage.setNote("pay=1215284515");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+
+                HantePOSAPI.sale("EBT"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"POS_PAYMENT",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
 //            case R.id.merchant_sign_in_btn:
 //                posSendMessage.setType("merchantSignIn");
@@ -1108,18 +877,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 //                break;
             case R.id.merchant_create_token_btn:
                 if(!TextUtils.isEmpty(token_verify_code_et.getText().toString())){
-                    posSendMessage.setType("devicePair");
-                    posSendMessage.verifyCode=token_verify_code_et.getText().toString();
-                    posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                    sendMsg(posSendMessage);
+                    HantePOSAPI.pairingDevice(token_verify_code_et.getText().toString(),merchant_et.getText().toString());
                 }else {
                     ToastUtils.show("请输入 verify code");
                 }
                 break;
             case R.id.merchant_search_token_btn:
-                posSendMessage.setType("searchToken");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                sendMsg(posSendMessage);
+                HantePOSAPI.searchToken(merchant_et.getText().toString());
                 break;
             case R.id.device_search_btn:
                 if(!TextUtils.isEmpty(device_sn_et.getText().toString())){
@@ -1129,82 +893,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }
                 break;
             case R.id.credit_card_sign_in_btn:
-                posSendMessage.setType("creditCardSignIn");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setPassword(credit_card_sign_in_et.getText().toString());
-                sendMsg(posSendMessage);
+                HantePOSAPI.creditCardSignIn(device_sn_et.getText().toString(),merchant_et.getText().toString(),credit_card_sign_in_et.getText().toString());
                 break;
             case R.id.query_oder_sign_btn:
-                posSendMessage.setType("orderSignature");
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+                HantePOSAPI.orderSignature(randomOrderNo(),device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
             case R.id.merchant_check_btn:
-                posSendMessage.setType("checkPOS");
-//                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-//                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+//                posSendMessage.setType("checkPOS");
+//                sendMsg(posSendMessage);
                 break;
             case R.id.checkout_close_countdown_btn:
-                posSendMessage.setType("transactionCountdown");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                //1开启 0 关闭
-                posSendMessage.opened="0";
-                posSendMessage.time=60;
-                sendMsg(posSendMessage);
+                HantePOSAPI.config("transactionCountdown",0,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
-            case R.id.query_order_list_btn:
-                //startActivityForResult(new Intent(MainActivity.this, TransactionRecordActivity.class),102);
-                break;
+//            case R.id.query_order_list_btn:
+//                startActivityForResult(new Intent(MainActivity.this, TransactionRecordActivity.class),102);
+//                break;
             case R.id.merchant_reset_pair_btn:
-                posSendMessage.setType("reSetPair");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                sendMsg(posSendMessage);
+                HantePOSAPI.reSetPairDevice(merchant_et.getText().toString());
                 break;
             case R.id.card_num_payment_btn:
 
-                posSendMessage.setType("transaction");
-                if(!TextUtils.isEmpty(et_amount.getText().toString())){
-                    posSendMessage.setAmount(Integer.parseInt(et_amount.getText().toString()));
+                if(TextUtils.isEmpty(et_amount.getText().toString())){
+                    ToastUtils.show("Please enter the transaction amount");
+                    return;
                 }
-                posSendMessage.setCurrency("USD");
-                posSendMessage.setTitle("大厅1001桌");
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setOrderNo(randomOrderNo());
-                posSendMessage.setPaymentScenario("POS_KEY_IN");
-                posSendMessage.setTransType("SALE");
 
-                //"{\"taxAmount\":1,\"tipCustom\":false,\"tipAmount\":0}"
-                JSONObject charges000=new JSONObject();
                 if(!TextUtils.isEmpty(et_tax_amount.getText().toString())){
-                    charges000.put("taxAmount",et_tax_amount.getText().toString());
-
+                    taxAmount=Integer.parseInt(et_tax_amount.getText().toString());
                 }
-                //tipCustom 小费类型
-                //true : 商户进行小费传入
-                //false : 用户机器上选择小费
                 if(!TextUtils.isEmpty(et_tip_amount.getText().toString())){
-                    charges000.put("tipCustom",true);
-                    charges000.put("tipAmount",et_tip_amount.getText().toString());
-                }else {
-                    charges000.put("tipCustom",false);
+                    tipAmount=Integer.parseInt(et_tip_amount.getText().toString());
                 }
-                posSendMessage.setAdditionalCharges(charges000.toJSONString());
-                posSendMessage.setDesc(et_remark.getText().toString());
-                posSendMessage.setItems("[{\"itemId\":1001,\"name\":\"衣服\",\"description\":\"x125\",\"quantity\":1,\"unitPrice\":1}]");
-                posSendMessage.setNote("pay=1215284515");
-                posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                posSendMessage.setDeviceId(device_id_et.getText().toString());
-                sendMsg(posSendMessage);
+
+                HantePOSAPI.sale("SALE"
+                        ,Integer.parseInt(et_amount.getText().toString()),taxAmount,tipAmount,"POS_KEY_IN",randomOrderNo(),"测试"
+                        ,device_id_et.getText().toString(),merchant_et.getText().toString());
                 break;
         }
     }
 
     private void refreshTransBtn(boolean b) {
         findViewById(R.id.checkstand_btn).setEnabled(b);
+        findViewById(R.id.auth_btn).setEnabled(b);
+
         findViewById(R.id.qrcode_collection_btn).setEnabled(b);
         findViewById(R.id.qrcode_scan_btn).setEnabled(b);
         findViewById(R.id.checkout_cancel_btn).setEnabled(b);
@@ -1214,12 +945,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.card_num_payment_btn).setEnabled(b);
         findViewById(R.id.stop_connect_btn).setEnabled(b);
         findViewById(R.id.connect_btn).setEnabled(!b);
+
     }
 
-    private void sendMsg(TcpMessageBase msg) {
-        if(HanteSDKUtils.isConnected()){
+    private void refreshPromptDialog(String type) {
+        if(HantePOSAPI.isConnected()){
 
-            if("transaction".equals(msg.getType())){
+            if("transaction".equals(type)){
                 if(null==paymentTipDialog){
                     paymentTipDialog=new PaymentTipDialog(MainActivity.this).builder();
                 }
@@ -1240,16 +972,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 paymentTipDialog.setPositiveButton(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        TcpTransactionMessage posSendMessage = new TcpTransactionMessage();
-                        posSendMessage.setType("transactionCancel");
-                        posSendMessage.setOrderNo(reconnection_order_et.getText().toString());
-                        posSendMessage.setMerchantNo(merchant_et.getText().toString());
-                        posSendMessage.setDeviceId(device_id_et.getText().toString());
-                        sendMsg(posSendMessage);
+                        HantePOSAPI.cancelTransaction(reconnection_order_et.getText().toString()
+                                ,device_id_et.getText().toString(),merchant_et.getText().toString());
                     }
                 }).show("$"+amount,"Wait for payment");
 
-            }else if("refund".equals(msg.getType())){
+            }else if("refund".equals(type)){
                 if(null==paymentTipDialog){
                     paymentTipDialog=new PaymentTipDialog(MainActivity.this).builder();
                 }
@@ -1259,12 +987,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     amount+=Double.parseDouble(refund_et.getText().toString())*0.01;
                 }
                 paymentTipDialog.setCanClose(false).show("$"+amount,"Wait for Refund");
-            }else if("void".equals(msg.getType())){
+            }else if("void".equals(type)){
                 if(null==paymentTipDialog){
                     paymentTipDialog=new PaymentTipDialog(MainActivity.this).builder();
                 }
                 paymentTipDialog.setCanClose(false).show("","Wait for Void");
-            }else if("capture".equals(msg.getType())){
+            }else if("capture".equals(type)){
                 if(null==paymentTipDialog){
                     paymentTipDialog=new PaymentTipDialog(MainActivity.this).builder();
                 }
@@ -1280,9 +1008,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 paymentTipDialog.setCanClose(false).show("$"+amount,"Wait for capture");
             }
 
-            param_tv.setText(msg.toString());
+            param_tv.setText(type);
             result_tv.setText("Response:");
-            HanteSDKUtils.sentMessageV2(msg);
+            // HantePOSAPI.sentMessageV2(msg);
         }else {
             Toast.makeText(this,"Please connect to POS first",Toast.LENGTH_SHORT).show();
         }
@@ -1401,7 +1129,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void finish() {
-        HanteSDKUtils.stopTcpConnect();
+        HantePOSAPI.stopPOSConnect();
         super.finish();
     }
 
