@@ -6,11 +6,10 @@ Sunmi SmartPad 接入Hante 收款
 注意：使用前请先，观看使用视频（目录:app/SmartPad_POS.mp4）
 使用步骤：<br/>
    第一步：导入: HantePOSAPI.aar(目录:app/libs/HantePOSAPI.aar) <br/>
-   第二步：获取 SmartPad 服务端 IP + 端口号<br/>
-   第三步: 使用 HantePOSAPI.aar 建立连接 <br/>
+   第二步: 使用 HantePOSAPI <br/>
       
    /** <br/>
-     * <b>连接POS服务</b><br/>
+     * <b>2.1 连接POS服务</b><br/>
      * @param ip ip 服务IP地址<br/>
      * @param deviceId pos (配对数据 ，未配对传空)<br/>
      * @param token pos (配对数据，未配对传空)<br/>
@@ -41,7 +40,7 @@ Sunmi SmartPad 接入Hante 收款
          public void receiveMessage(String msg) {//收到服务端响应信息}
      });
 
-    设备配对(未配对需要进行)
+    <b>2.2 设备配对(未配对需要进行) </b>
      /**
      * 设备配对
      * @param pairingCode 配对码
@@ -49,10 +48,9 @@ Sunmi SmartPad 接入Hante 收款
      * 配对成功获取 token 和 deviceId
      */
     public static void pairingDevice(String pairingCode,String merchantNo)
-    举例:  <br/>  
-    HantePOSAPI.pairingDevice("645464354564","1101301");
+
     
-   <b> 配对成功初始化token:</b> <br/>
+    <b>2.3配对成功初始化token:</b> <br/>
     /** <br/>
      * 初始化 token<br/>
      * @param deviceId 设备id<br/>
@@ -62,7 +60,7 @@ Sunmi SmartPad 接入Hante 收款
     举例:<br/>
     HantePOSAPI.refreshToken("ht98234","s2j409sdfjlhg1rt");
 
-   <b> 重置配对（忘记deviceId 和 token 可以进行重置配对）</b> <br/>
+   <b>2.4 重置配对（忘记deviceId 和 token 可以进行重置配对）</b> <br/>
     /**<br/>
      * 解除设备配对<br/>
      * @param merchantNo 商户号<br/>
@@ -72,7 +70,7 @@ Sunmi SmartPad 接入Hante 收款
     举例
        HantePOSAPI.reSetPairDevice("1101301");
     
-   <b> 发起交易:</b> <br/>
+   <b> 2.5发起交易:</b> <br/>
     /**<br/>
      * 收款<br/>
      * @param transType  交易类型，  SALE 直接收款  AUTH 预授权(刷卡支付生效)<br/>
@@ -95,7 +93,7 @@ Sunmi SmartPad 接入Hante 收款
     
    
 
-   <b> 发起退款：</b> <br/>
+   <b> 2.6发起退款：</b> <br/>
      /**<br/>
      * 退款<br/>
      * @param amount 退款金额 （单位:分）<br/>
