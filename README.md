@@ -7,9 +7,9 @@ Sunmi SmartPad 接入Hante 收款
 使用步骤：<br/>
    第一步：导入: HantePOSAPI.aar(目录:app/libs/HantePOSAPI.aar) <br/>
    第二步: 使用 HantePOSAPI <br/>
-      
+    <b>2.1 连接POS服务</b>  
    /** <br/>
-     * <b>2.1 连接POS服务</b><br/>
+     * 连接POS服务<br/>
      * @param ip ip 服务IP地址<br/>
      * @param deviceId pos (配对数据 ，未配对传空)<br/>
      * @param token pos (配对数据，未配对传空)<br/>
@@ -40,7 +40,8 @@ Sunmi SmartPad 接入Hante 收款
          public void receiveMessage(String msg) {//收到服务端响应信息}
      });
 
-    <b>2.2 设备配对(未配对需要进行) </b>
+
+    2.2 设备配对(未配对需要进行)
      /**
      * 设备配对
      * @param pairingCode 配对码
@@ -50,7 +51,7 @@ Sunmi SmartPad 接入Hante 收款
     public static void pairingDevice(String pairingCode,String merchantNo)
 
     
-    <b>2.3配对成功初始化token:</b> <br/>
+    2.3配对成功初始化token: <br/>
     /** <br/>
      * 初始化 token<br/>
      * @param deviceId 设备id<br/>
