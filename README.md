@@ -3,12 +3,20 @@ Sunmi SmartPad 接入Hante 收款
 支持：信用卡,微信,支付宝
 
 原理:Sunmi SmartPad 作为 服务端 , Demo作为 客户端,使用Socket 交互
-
+注意：使用前请先，观看使用视频（app/SmartPad_POS.mp4）
 使用步骤：<br/>
-   第一步：导入: tcp-release.aar <br/>
+   第一步：导入: HantePOSAPI.aar <br/>
    第二步：获取 SmartPad 服务端 IP + 端口号<br/>
-   第三步: 使用 tcp-release.aar 建立连接 <br/>
-    HanteSDKUtils.connectTcpService(Context context, String ip, String deviceId, String key, SocketCallback callback) <br/>
+   第三步: 使用 HantePOSAPI.aar 建立连接 <br/>
+      
+   /** <br/>
+     * 连接POS服务<br/>
+     * @param ip ip 服务IP地址<br/>
+     * @param deviceId pos (配对数据 ，未配对传空)<br/>
+     * @param token pos (配对数据，未配对传空)<br/>
+     */
+    public static void connectPOSService(Context context, String ip, String deviceId, String token, SocketCallback callback)
+    <br/>
 
      HanteSDKUtils.connectTcpService(Context, ip, deviceId,key, new SocketCallback() {
          @Override
@@ -33,8 +41,66 @@ Sunmi SmartPad 接入Hante 收款
          public void receiveMessage(String msg) {//收到服务端响应信息}
      });
 
-     
-     发送消息消息:
-     HanteSDKUtils.sentMessageV2(TcpMessageBase msg);
 
-     
+    设备配对(未配对需要进行)
+     /**<br/>
+     * 设备配对<br/>
+     * @param pairingCode 配对码<br/>
+     * @param merchantNo 商户号 <br/>
+     * 配对成功获取 token 和 deviceId<br/>
+     */
+    public static void pairingDevice(String pairingCode,String merchantNo)
+    举例:    
+    HantePOSAPI.pairingDevice("645464354564","1101301");
+    
+    配对成功初始化token:
+    /**<br/>
+     * 初始化 token<br/>
+     * @param deviceId 设备id<br/>
+     * @param token<br/>
+     */
+    public static void refreshToken(String deviceId,String token)
+    举例:
+    HantePOSAPI.refreshToken("ht98234","s2j409sdfjlhg1rt");
+
+    重置配对（忘记deviceId 和 token 可以进行重置配对）
+    /**<br/>
+     * 解除设备配对<br/>
+     * @param merchantNo 商户号<br/>
+     */
+    public static void reSetPairDevice(String merchantNo)
+    
+    发起交易:
+    /**<br/>
+     * 收款<br/>
+     * @param transType  交易类型，  SALE 直接收款  AUTH 预授权(刷卡支付生效)<br/>
+     * @param amount 交易金额 （单位:分）<br/>
+     * @param taxAmount 税费<br/>
+     * @param tipAmount 消费<br/>
+     * @param paymentScenario 收款方式  SCAN_CODE_PAYMENT : 付款码支付  QR_CODE_PAYMENT : 二维码支付  POS_PAYMENT : 刷卡支付 HANTE_CASHIER：汉特收银台<br/>
+     * @param orderNo 订单号<br/>
+     * @param remark 备注<br/>
+     * @param deviceId 设备ID （设备配对获取）<br/>
+     * @param merchantNo 商户号<br/>
+     * 收款成功响应 transactionId(Hante 交易流水号)
+     */
+    public static void sale(String transType,int amount,int taxAmount,int tipAmount,String paymentScenario,String orderNo,String remark,String deviceId,String merchantNo)
+   举例：信用卡收款
+      HantePOSAPI.sale("SALE",1,0,0,"POS_PAYMENT","1624646168464174","测试","ht98234","1101301");
+    
+   
+
+    发起退款：
+     /**<br/>
+     * 退款<br/>
+     * @param amount 退款金额 （单位:分）<br/>
+     * @param transactionId Hante交易流水号<br/>
+     * @param deviceId 设备ID （设备配对获取）<br/>
+     * @param merchantNo 商户号<br/>
+     */
+    public static void refund(int amount,String transactionId,String deviceId,String merchantNo)
+
+    举例：
+      HantePOSAPI.refund(1,"2023061246465489456","ht98234","1101301");
+    
+    
