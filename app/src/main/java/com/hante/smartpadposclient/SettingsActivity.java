@@ -60,7 +60,6 @@ public class SettingsActivity extends AppCompatActivity {
 
     CustomDialog customDialog;
 
-    String version="V1";
     String merchantNo="";
     String deviceId="";
 
@@ -96,10 +95,6 @@ public class SettingsActivity extends AppCompatActivity {
 
         customDialog=new CustomDialog(this);
         HantePOSAPI.stopPOSConnect();
-        version=getIntent().getStringExtra("version");
-        if(TextUtils.isEmpty(version)){
-            version="V1";
-        }
         act_tcp_settings_title_bar.setListener(new CommonTitleBar.OnTitleBarListener() {
             @Override
             public void onClicked(View v, int action, String extra) {
@@ -540,7 +535,6 @@ public class SettingsActivity extends AppCompatActivity {
         String code= SpUtils.getInstance().getString(Constant.CONFIG_TOKEN_VERIFY_CODE,"");
         if(!TextUtils.isEmpty(code)){
             POSTransaction posSendMessage = new POSTransaction();
-            posSendMessage.setVersion(version);
             posSendMessage.setType("devicePair");
             posSendMessage.verifyCode=token_verify_code_et.getText().toString();
             posSendMessage.setMerchantNo(merchantNo);
@@ -554,7 +548,6 @@ public class SettingsActivity extends AppCompatActivity {
         if(!TextUtils.isEmpty(pass)){
             customDialog.show();
             POSTransaction posSendMessage = new POSTransaction();
-            posSendMessage.setVersion(version);
             posSendMessage.setType("creditCardSignIn");
             posSendMessage.setMerchantNo(merchantNo);
             posSendMessage.setDeviceId(deviceId);
