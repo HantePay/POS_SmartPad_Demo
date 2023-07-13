@@ -1,9 +1,10 @@
 "# POS_SmartPad_Demo"
-Sunmi SmartPad 接入Hante 收款
-支持：信用卡,微信,支付宝
+Sunmi SmartPad <br/>
+支持快捷键:*#00# 检查环境, *#01# 打开wiif <br/>
+Hante POS 收款支持：信用卡,微信,支付宝 <br/>
 
-原理:Sunmi SmartPad 作为 服务端 , Demo作为 客户端,使用Socket 交互
-注意：使用前请先，观看使用视频（目录:app/SmartPad_POS.mp4）
+原理:Sunmi SmartPad 作为 POS 服务端 , Demo作为 客户端,使用Socket 交互<br/>
+注意：使用前请先，观看使用视频（目录:app/SmartPad_POS.mp4）<br/>
 使用步骤：<br/>
    第一步：导入: HantePOSAPI.aar(目录:app/libs/HantePOSAPI.aar) <br/>
    第二步: 使用 HantePOSAPI <br/>
